@@ -1,0 +1,30 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.egg-info/
+.pytest_cache/
+
+# Ambientes virtuais
+venv/
+.env
+
+# IDEs e editores
+.vscode/
+.idea/
+
+# Docker e containers
+Dockerfile
+*.dockerignore
+
+# Logs e temporários
+*.log
+*.tmp
+
+# Dependências e builds
+poetry.lock  # Se não quiser versionar, mas geralmente é versionado
+
+# Outros
+.DS_Store
+Thumbs.db
