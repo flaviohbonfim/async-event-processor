@@ -1,22 +1,24 @@
-from threading import Lock
+import redis
 from typing import Dict, Optional
+import json
 
-notification_storage: Dict[str, Dict[str, any]] = {}
-lock = Lock()
+# Conexão com Redis (ajuste host/port se necessário)
+r = redis.Redis(host='localhost', port=6379, db=0)
 
 def set_notification(trace_id: str, data: Dict[str, any]):
-    with lock:
-        notification_storage[trace_id] = data
+    r.set(trace_id, json.dumps(data))
 
 def get_notification(trace_id: str) -> Optional[Dict[str, any]]:
-    with lock:
-        return notification_storage.get(trace_id)
+    stored = r.get(trace_id)
+    if stored:
+        return json.loads(stored)
+    return None
 
 def clear_storage():
-    with lock:
-        notification_storage.clear()
+    r.flushdb()
 
 def set_status(trace_id: str, status: str):
-    with lock:
-        if trace_id in notification_storage:
-            notification_storage[trace_id]['status'] = status
+    data = get_notification(trace_id)
+    if data:
+        data['status'] = status
+        set_notification(trace_id, data)

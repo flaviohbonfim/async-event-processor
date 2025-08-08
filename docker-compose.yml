@@ -25,8 +25,11 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
       RABBITMQ_PASS: guest
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       - rabbitmq
+      - redis
 
   celery_worker:
     build:
@@ -38,9 +41,20 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
       RABBITMQ_PASS: guest
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       - rabbitmq
       - fastapi_app
+      - redis
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
 
 volumes:
   rabbitmq_data:
+  redis_data:
