@@ -35,4 +35,7 @@ async def get_status(traceId: str):
     info = storage.get_notification(traceId)
     if info is None:
         raise HTTPException(status_code=404, detail="Notification not found")
-    return NotificationStatusResponse(**info, traceId=traceId)
+    # Renomear 'channel' para 'tipoNotificacao' para matching com o schema
+    if 'channel' in info:
+        info['tipoNotificacao'] = info.pop('channel')
+    return NotificationStatusResponse(**info)
