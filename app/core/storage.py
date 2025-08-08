@@ -15,3 +15,8 @@ def get_notification(trace_id: str) -> Optional[Dict[str, any]]:
 def clear_storage():
     with lock:
         notification_storage.clear()
+
+def set_status(trace_id: str, status: str):
+    with lock:
+        if trace_id in notification_storage:
+            notification_storage[trace_id]['status'] = status
