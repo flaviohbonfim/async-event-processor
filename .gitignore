@@ -15,7 +15,6 @@ venv/
 .idea/
 
 # Docker e containers
-Dockerfile
 *.dockerignore
 
 # Logs e temporários
