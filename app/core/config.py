@@ -11,11 +11,10 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
 
-    NOTIFICATION_INPUT_QUEUE: str = "fila.notificacao.entrada.SEU-NOME"
-    NOTIFICATION_RETRY_QUEUE: str = "fila.notificacao.retry.SEU-NOME"
-    NOTIFICATION_VALIDATION_QUEUE: str = "fila.notificacao.validacao.SEU-NOME"
-    NOTIFICATION_DLQ: str = "fila.notificacao.dlq.SEU-NOME"
-    NOTIFICATION_STATUS_UPDATE_QUEUE: str = "fila.notificacao.status.SEU-NOME"
+    NOTIFICATION_INPUT_QUEUE: str = "fila.notificacao.entrada"
+    NOTIFICATION_RETRY_QUEUE: str = "fila.notificacao.retry"
+    NOTIFICATION_VALIDATION_QUEUE: str = "fila.notificacao.validacao"
+    NOTIFICATION_DLQ: str = "fila.notificacao.dlq"
 
     ALLOWED_NOTIFICATION_TYPES: list[str] = ["email", "sms", "push"]
 

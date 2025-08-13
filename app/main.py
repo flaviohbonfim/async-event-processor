@@ -16,7 +16,6 @@ ALL_QUEUES = [
     settings.NOTIFICATION_RETRY_QUEUE,
     settings.NOTIFICATION_VALIDATION_QUEUE,
     settings.NOTIFICATION_DLQ,
-    settings.NOTIFICATION_STATUS_UPDATE_QUEUE,
 ]
 
 @app.on_event("startup")
