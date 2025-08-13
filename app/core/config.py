@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     NOTIFICATION_DLQ: str = "fila.notificacao.dlq.SEU-NOME"
     NOTIFICATION_STATUS_UPDATE_QUEUE: str = "fila.notificacao.status.SEU-NOME" # New queue for status updates
 
+    ALLOWED_NOTIFICATION_TYPES: list[str] = ["email", "sms", "push"] # Allowed notification types
+
     model_config = SettingsConfigDict(env_file=".env")
 
 

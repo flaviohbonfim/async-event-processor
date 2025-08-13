@@ -67,3 +67,46 @@ def test_get_notification_status_not_found():
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Notification not found"}
+
+def test_create_notification_invalid_data():
+    invalid_data = {
+        "conteudoMensagem": "Olá Mundo!"
+        # Missing "tipoNotificacao"
+    }
+    response = client.post("/api/notificar", json=invalid_data)
+    assert response.status_code == 422 # Unprocessable Entity for validation errors
+
+    invalid_type_data = {
+        "conteudoMensagem": 123, # Invalid type
+        "tipoNotificacao": "email"
+    }
+    response = client.post("/api/notificar", json=invalid_type_data)
+    assert response.status_code == 422
+
+def test_create_notification_unsupported_type(mocker):
+    notification_data = {
+        "conteudoMensagem": "Olá Mundo!",
+        "tipoNotificacao": "unsupported_type"
+    }
+    mock_publish = mocker.patch('app.services.rabbitmq.RabbitMQService.publish_message')
+    response = client.post("/api/notificar", json=notification_data)
+    assert response.status_code == 400 # Bad Request for unsupported type
+    assert "Unsupported notification type" in response.json()["detail"]
+    mock_publish.assert_not_called()
+
+def test_create_notification_publish_error(mocker):
+    notification_data = {
+        "conteudoMensagem": "Olá Mundo!",
+        "tipoNotificacao": "email"
+    }
+    mocker.patch('app.services.rabbitmq.RabbitMQService.publish_message', side_effect=Exception("RabbitMQ error"))
+    response = client.post("/api/notificar", json=notification_data)
+
+    assert response.status_code == 500 # Internal Server Error
+    assert response.json() == {"detail": "Internal server error"}
+    # Verify that the notification status is updated to "FALHA_ENVIO"
+    response_json = response.json()
+    trace_id = response_json.get("traceId")
+    if trace_id:
+        stored_data = storage.get_notification(str(trace_id))
+        assert stored_data["status"] == "FALHA_ENVIO"
