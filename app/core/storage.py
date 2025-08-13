@@ -1,9 +1,14 @@
 import redis
 from typing import Dict, Optional
 import json
+from app.core.config import settings
 
-# Conexão com Redis (ajuste host/port se necessário)
-r = redis.Redis(host='localhost', port=6379, db=0)
+# Conexão com Redis usando configurações do ambiente
+r = redis.Redis(
+    host=settings.REDIS_HOST,
+    port=settings.REDIS_PORT,
+    db=settings.REDIS_DB # Assuming REDIS_DB is defined in settings
+)
 
 def set_notification(trace_id: str, data: Dict[str, any]):
     r.set(trace_id, json.dumps(data))

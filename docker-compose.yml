@@ -12,6 +12,23 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
 
   fastapi_app:
     build:
@@ -28,14 +45,16 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
-      - rabbitmq
-      - redis
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
-  celery_worker:
+  aio_pika_worker:
     build:
       context: .
       dockerfile: Dockerfile
-    command: poetry run celery -A app.tasks.celery worker --loglevel=info
+    command: poetry run python -m app.worker --queue validation_queue,dispatch_queue,status_update_queue,email_queue,sms_queue,push_queue,whatsapp_queue
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
@@ -44,16 +63,12 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
-      - rabbitmq
-      - fastapi_app
-      - redis
-
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      fastapi_app:
+        condition: service_started
 
 volumes:
   rabbitmq_data:

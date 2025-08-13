@@ -6,9 +6,9 @@ from app.schemas.message import (
 )
 from app.services.rabbitmq import RabbitMQService, get_rabbitmq_service
 from app.core import storage
-from app.tasks.message_tasks import validate_notification
+# from app.tasks.message_tasks import validate_notification # Not directly used here anymore
 from uuid import uuid4
-from app.tasks.celery import celery_app  # Adicione esta importação
+# from app.tasks.celery import celery_app  # Removida esta importação
 
 
 router = APIRouter()
@@ -26,8 +26,8 @@ async def create_notification(notification: NotificationCreate, rabbitmq_service
         'traceId': str(trace_id)  # Adicionado traceId
     }
     storage.set_notification(str(trace_id), data)
-    # await rabbitmq_service.publish_message(message=data, queue_name="validation_queue")  // Remova ou comente esta linha
-    celery_app.send_task('tasks.validate_notification', kwargs={'data': data})  # Adicione esta linha para invocar a tarefa
+    # Publish to the validation queue's exchange
+    await rabbitmq_service.publish_message(message=data, routing_key="validation_queue", exchange_name="validation_queue_exchange")
     return NotificationCreateResponse(mensagemId=mensagem_id, traceId=trace_id)
 
 @router.get("/notificacao/status/{traceId}", response_model=NotificationStatusResponse)
