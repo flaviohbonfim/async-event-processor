@@ -1,7 +1,7 @@
 import json
 from app.core.config import settings
 import aio_pika
-from aio_pika import ExchangeType, IncomingMessage
+from aio_pika import ExchangeType
 
 
 class RabbitMQService:
