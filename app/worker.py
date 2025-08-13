@@ -4,17 +4,17 @@ import json
 import argparse
 from aio_pika import IncomingMessage, ExchangeType
 from app.services.rabbitmq import RabbitMQService
-from app.tasks.message_tasks import validate_notification, dispatch_notification, send_notification, update_status
-from app.schemas.message import ChannelType
+from app.tasks.message_tasks import process_initial_notification, process_retry_notification, process_final_notification, process_dlq_message
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 # Map queue names to their respective task functions
 TASK_FUNCTIONS = {
-    "validation_queue": validate_notification,
-    "dispatch_queue": dispatch_notification,
-    "status_update_queue": update_status,
-    **{f"{channel.value}_queue": send_notification for channel in ChannelType}
+    settings.NOTIFICATION_INPUT_QUEUE: process_initial_notification,
+    settings.NOTIFICATION_RETRY_QUEUE: process_retry_notification,
+    settings.NOTIFICATION_VALIDATION_QUEUE: process_final_notification,
+    settings.NOTIFICATION_DLQ: process_dlq_message,
 }
 
 async def process_message(message: IncomingMessage, task_func, rabbitmq_service: RabbitMQService):
@@ -25,8 +25,8 @@ async def process_message(message: IncomingMessage, task_func, rabbitmq_service:
             logger.info(f"Message processed successfully by {task_func.__name__}")
         except Exception as e:
             logger.error(f"Error processing message for {task_func.__name__}: {e}", exc_info=True)
-            # In a real application, consider dead-lettering or retries here
-            # await message.nack(requeue=False)
+            # The retry/DLQ logic is now handled within the task functions themselves
+            # No need for nack(requeue=False) here, as messages are explicitly routed.
 
 async def main(queue_names_str: str):
     logging.basicConfig(level=logging.INFO)
@@ -54,6 +54,7 @@ async def main(queue_names_str: str):
             
             # Declare exchange and queue (ensure they are durable)
             exchange_name = f"{queue_name}_exchange"
+            # For DLQ, we might need specific arguments for dead-lettering, but for now, simple declaration.
             await rabbitmq_service.declare_exchange(exchange_name, ExchangeType.DIRECT, durable=True)
             await rabbitmq_service.declare_queue(queue_name, durable=True)
             await rabbitmq_service.bind_queue(queue_name, exchange_name, routing_key=queue_name)

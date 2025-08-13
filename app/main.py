@@ -15,18 +15,14 @@ app = FastAPI(
 rabbitmq_service: RabbitMQService = None
 
 # Define queues (for declaration purposes in FastAPI app)
-PIPELINE_QUEUES = [
-    "validation_queue",
-    "dispatch_queue",
-    "status_update_queue",
+# Using queue names from settings
+ALL_QUEUES = [
+    settings.NOTIFICATION_INPUT_QUEUE,
+    settings.NOTIFICATION_RETRY_QUEUE,
+    settings.NOTIFICATION_VALIDATION_QUEUE,
+    settings.NOTIFICATION_DLQ,
+    settings.NOTIFICATION_STATUS_UPDATE_QUEUE,
 ]
-
-CHANNEL_QUEUES = [
-    f"{channel.value}_queue"
-    for channel in ChannelType
-]
-
-ALL_QUEUES = PIPELINE_QUEUES + CHANNEL_QUEUES
 
 @app.on_event("startup")
 async def startup_event():
@@ -37,6 +33,7 @@ async def startup_event():
     # Declare exchanges and queues (FastAPI app is responsible for topology)
     for queue_name in ALL_QUEUES:
         exchange_name = f"{queue_name}_exchange"
+        # For DLQ, we might need specific arguments for dead-lettering, but for now, simple declaration.
         await rabbitmq_service.declare_exchange(exchange_name, ExchangeType.DIRECT, durable=True)
         await rabbitmq_service.declare_queue(queue_name, durable=True)
         await rabbitmq_service.bind_queue(queue_name, exchange_name, routing_key=queue_name)

@@ -6,6 +6,7 @@ from app.schemas.message import (
 )
 from app.services.rabbitmq import RabbitMQService, get_rabbitmq_service
 from app.core import storage
+from app.core.config import settings # Import settings
 # from app.tasks.message_tasks import validate_notification # Not directly used here anymore
 from uuid import uuid4
 # from app.tasks.celery import celery_app  # Removida esta importação
@@ -26,8 +27,12 @@ async def create_notification(notification: NotificationCreate, rabbitmq_service
         'traceId': str(trace_id)  # Adicionado traceId
     }
     storage.set_notification(str(trace_id), data)
-    # Publish to the validation queue's exchange
-    await rabbitmq_service.publish_message(message=data, routing_key="validation_queue", exchange_name="validation_queue_exchange")
+    # Publish to the initial notification input queue
+    await rabbitmq_service.publish_message(
+        message=data,
+        routing_key=settings.NOTIFICATION_INPUT_QUEUE,
+        exchange_name=f"{settings.NOTIFICATION_INPUT_QUEUE}_exchange"
+    )
     return NotificationCreateResponse(mensagemId=mensagem_id, traceId=trace_id)
 
 @router.get("/notificacao/status/{traceId}", response_model=NotificationStatusResponse)

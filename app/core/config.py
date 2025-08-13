@@ -11,6 +11,13 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0 # Default Redis DB
 
+    # Queue Names
+    NOTIFICATION_INPUT_QUEUE: str = "fila.notificacao.entrada.SEU-NOME"
+    NOTIFICATION_RETRY_QUEUE: str = "fila.notificacao.retry.SEU-NOME"
+    NOTIFICATION_VALIDATION_QUEUE: str = "fila.notificacao.validacao.SEU-NOME"
+    NOTIFICATION_DLQ: str = "fila.notificacao.dlq.SEU-NOME"
+    NOTIFICATION_STATUS_UPDATE_QUEUE: str = "fila.notificacao.status.SEU-NOME" # New queue for status updates
+
     model_config = SettingsConfigDict(env_file=".env")
 
 
