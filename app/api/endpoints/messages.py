@@ -6,10 +6,8 @@ from app.schemas.message import (
 )
 from app.services.rabbitmq import RabbitMQService, get_rabbitmq_service
 from app.core import storage
-from app.core.config import settings # Import settings
-# from app.tasks.message_tasks import validate_notification # Not directly used here anymore
+from app.core.config import settings
 from uuid import uuid4
-# from app.tasks.celery import celery_app  # Removida esta importação
 
 
 router = APIRouter()
@@ -26,23 +24,21 @@ async def create_notification(notification: NotificationCreate, rabbitmq_service
     trace_id = uuid4()
     mensagem_id = notification.mensagemId or uuid4()
     data = {
-        'mensagemId': str(mensagem_id),  # Convertido para string
+        'mensagemId': str(mensagem_id),
         'conteudoMensagem': notification.conteudoMensagem,
-        'channel': notification.tipoNotificacao,  # Alterado para 'channel' para matching com tarefas
+        'channel': notification.tipoNotificacao,
         'status': 'RECEBIDO',
-        'traceId': str(trace_id)  # Adicionado traceId
+        'traceId': str(trace_id)
     }
     storage.set_notification(str(trace_id), data)
 
     try:
-        # Publish to the initial notification input queue
         await rabbitmq_service.publish_message(
             message=data,
             routing_key=settings.NOTIFICATION_INPUT_QUEUE,
             exchange_name=f"{settings.NOTIFICATION_INPUT_QUEUE}_exchange"
         )
     except Exception as e:
-        # Update status to FALHA_ENVIO if publishing fails
         data["status"] = "FALHA_ENVIO"
         storage.set_notification(str(trace_id), data)
         raise HTTPException(
@@ -57,7 +53,6 @@ async def get_status(traceId: str):
     info = storage.get_notification(traceId)
     if info is None:
         raise HTTPException(status_code=404, detail="Notification not found")
-    # Renomear 'channel' para 'tipoNotificacao' para matching com o schema
     if 'channel' in info:
         info['tipoNotificacao'] = info.pop('channel')
     return NotificationStatusResponse(**info)

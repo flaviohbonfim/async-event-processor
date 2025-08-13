@@ -3,19 +3,14 @@ from app.api.endpoints import messages
 from app.core.config import settings
 from app.services.rabbitmq import RabbitMQService
 from aio_pika import ExchangeType
-from app.schemas.message import ChannelType # Still needed for defining channel queues
-
 app = FastAPI(
     title="RabbitMQ FastAPI Project",
     description="API for managing RabbitMQ messages with FastAPI and aio-pika",
     version="0.0.1",
 )
 
-# Global RabbitMQ Service instance
 rabbitmq_service: RabbitMQService = None
 
-# Define queues (for declaration purposes in FastAPI app)
-# Using queue names from settings
 ALL_QUEUES = [
     settings.NOTIFICATION_INPUT_QUEUE,
     settings.NOTIFICATION_RETRY_QUEUE,
@@ -30,10 +25,8 @@ async def startup_event():
     rabbitmq_service = RabbitMQService()
     await rabbitmq_service.connect()
 
-    # Declare exchanges and queues (FastAPI app is responsible for topology)
     for queue_name in ALL_QUEUES:
         exchange_name = f"{queue_name}_exchange"
-        # For DLQ, we might need specific arguments for dead-lettering, but for now, simple declaration.
         await rabbitmq_service.declare_exchange(exchange_name, ExchangeType.DIRECT, durable=True)
         await rabbitmq_service.declare_queue(queue_name, durable=True)
         await rabbitmq_service.bind_queue(queue_name, exchange_name, routing_key=queue_name)

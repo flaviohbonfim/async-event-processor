@@ -1,13 +1,6 @@
-from enum import Enum
 from pydantic import BaseModel, Field
 from uuid import UUID, uuid4
 from typing import Optional
-
-class ChannelType(Enum):
-    EMAIL = "email"
-    SMS = "sms"
-    PUSH = "push"
-    WHATSAPP = "whatsapp"
 
 class NotificationCreate(BaseModel):
     mensagemId: Optional[UUID] = Field(default_factory=uuid4)

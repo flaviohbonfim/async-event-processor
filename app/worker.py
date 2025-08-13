@@ -25,8 +25,6 @@ async def process_message(message: IncomingMessage, task_func, rabbitmq_service:
             logger.info(f"Message processed successfully by {task_func.__name__}")
         except Exception as e:
             logger.error(f"Error processing message for {task_func.__name__}: {e}", exc_info=True)
-            # The retry/DLQ logic is now handled within the task functions themselves
-            # No need for nack(requeue=False) here, as messages are explicitly routed.
 
 async def main(queue_names_str: str):
     logging.basicConfig(level=logging.INFO)
@@ -52,15 +50,12 @@ async def main(queue_names_str: str):
 
             task_func = TASK_FUNCTIONS[queue_name]
             
-            # Declare exchange and queue (ensure they are durable)
             exchange_name = f"{queue_name}_exchange"
-            # For DLQ, we might need specific arguments for dead-lettering, but for now, simple declaration.
             await rabbitmq_service.declare_exchange(exchange_name, ExchangeType.DIRECT, durable=True)
             await rabbitmq_service.declare_queue(queue_name, durable=True)
             await rabbitmq_service.bind_queue(queue_name, exchange_name, routing_key=queue_name)
             logger.info(f"Exchange '{exchange_name}' and queue '{queue_name}' declared and bound.")
 
-            # Start consuming messages for this queue in a separate task
             consumer_task = asyncio.create_task(
                 rabbitmq_service.start_consumer(
                     queue_name,
@@ -74,7 +69,6 @@ async def main(queue_names_str: str):
             logger.warning("No valid queues found to start consumers for. Exiting worker.")
             return
 
-        # Keep the event loop running indefinitely for background consumer tasks
         await asyncio.Future()
 
     except asyncio.CancelledError:

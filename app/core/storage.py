@@ -7,7 +7,7 @@ from app.core.config import settings
 r = redis.Redis(
     host=settings.REDIS_HOST,
     port=settings.REDIS_PORT,
-    db=settings.REDIS_DB # Assuming REDIS_DB is defined in settings
+    db=settings.REDIS_DB
 )
 
 def set_notification(trace_id: str, data: Dict[str, any]):

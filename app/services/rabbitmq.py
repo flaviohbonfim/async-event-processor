@@ -1,4 +1,3 @@
-import aio_pika
 import json
 from app.core.config import settings
 import aio_pika
