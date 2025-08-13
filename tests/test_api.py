@@ -1,5 +1,4 @@
 from fastapi.testclient import TestClient
-from unittest.mock import patch
 import uuid
 import pytest
 
@@ -19,14 +18,14 @@ def test_health_check():
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
-def test_create_notification_success():
+def test_create_notification_success(mocker):
     notification_data = {
         "conteudoMensagem": "Olá Mundo!",
         "tipoNotificacao": "email"
     }
 
-    with patch('app.services.rabbitmq.RabbitMQService.publish_message') as mock_publish:
-        response = client.post("/api/notificar", json=notification_data)
+    mock_publish = mocker.patch('app.services.rabbitmq.RabbitMQService.publish_message')
+    response = client.post("/api/notificar", json=notification_data)
 
     assert response.status_code == 202
     response_json = response.json()
@@ -37,16 +36,17 @@ def test_create_notification_success():
     assert stored_data["status"] == "RECEBIDO"
     assert str(stored_data["mensagemId"]) == str(mensagem_id)
     assert stored_data["conteudoMensagem"] == notification_data["conteudoMensagem"]
-    assert stored_data["tipoNotificacao"] == notification_data["tipoNotificacao"]
+    assert stored_data["channel"] == notification_data["tipoNotificacao"]
     mock_publish.assert_called_once()
 
 def test_get_notification_status():
     trace_id = uuid.uuid4()
     data = {
-        "mensagemId": uuid.uuid4(),
+        "mensagemId": str(uuid.uuid4()),
         "conteudoMensagem": "Teste",
         "tipoNotificacao": "sms",
-        "status": "Sent"
+        "status": "Sent",
+        "traceId": str(trace_id) # Add traceId to the stored data
     }
     storage.set_notification(str(trace_id), data)
 
